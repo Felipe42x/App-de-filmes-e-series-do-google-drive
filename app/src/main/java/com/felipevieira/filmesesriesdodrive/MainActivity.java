@@ -41,7 +41,12 @@ public class MainActivity extends AppCompatActivity {
     List<String> filmes_listados = new ArrayList<String>();
     List<String> filmes_encontrados = new ArrayList<String>();
 
+    List<String> series_listadas = new ArrayList<String>();
+    List<String> series_encontradas = new ArrayList<String>();
+
     List<String> temporadas = new ArrayList<String>();
+    List<String> episodios = new ArrayList<String>();
+    List<String> link_episodios = new ArrayList<String>();
 
     int resultados = 0;
     Boolean pesquisou = false;
@@ -80,20 +85,29 @@ public class MainActivity extends AppCompatActivity {
                 if (contador == 1 && txt_pesquisa.getText().toString().equals("") ) {
                     lay_out.removeAllViews();
                     filmes_listados.clear();
+                    series_listadas.clear();
                     buscarTUDO();
                 }
                 else{
                 resultados = 0;
                 filmes_encontrados.clear();
+                series_encontradas.clear();
+
                 String busca = txt_pesquisa.getText().toString();
                 int qtd_filmes = filmes_listados.size();
+                int qtd_series = series_listadas.size();
 
                 for (int a = 0; a < qtd_filmes; a++) {
                     if (filmes_listados.get(a).toUpperCase().contains(busca.toUpperCase())) {
                         filmes_encontrados.add(filmes_listados.get(a));
                     }
                 }
-                resultados = filmes_encontrados.size();
+                for (int b = 0; b < qtd_series; b++) {
+                    if (series_listadas.get(b).toUpperCase().contains(busca.toUpperCase())) {
+                        series_encontradas.add(series_listadas.get(b));
+                    }
+                }
+                resultados = filmes_encontrados.size()+series_encontradas.size();
                 if (resultados == 0) {
                     MostraAviso("Nenhuma correspondência foi encontrada :/");
                 } else {
@@ -106,8 +120,8 @@ public class MainActivity extends AppCompatActivity {
                     toastRapido("Listando...", false);
                     pesquisou = true;
                     //MostraAviso(resultados+"");
-                    for (int x = 0; x < resultados; x++) {
-                        database.getReference("Filme/" + filmes_encontrados.get(x).toString()).addValueEventListener(new ValueEventListener() {
+                    for (int x = 0; x < filmes_encontrados.size(); x++) {
+                        database.getReference("Filme/" + filmes_encontrados.get(x)).addValueEventListener(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                 //Percorre o banco buscando filmes
@@ -181,6 +195,122 @@ public class MainActivity extends AppCompatActivity {
                                 });
 
                                 //}
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                            }
+                        });
+                    }
+
+                    for (int x = 0; x < series_encontradas.size(); x++) {
+                        database.getReference("Série/" + series_encontradas.get(x)).addValueEventListener(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
+                                //for(DataSnapshot dt: dataSnapshot.getChildren()){
+                                    final String nome_serie = dataSnapshot.getKey();
+                                    //series_listadas.add(nome_serie);
+                                    final Button b_s = new Button(getApplicationContext());
+                                    b_s.setText(nome_serie);
+                                    b_s.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+                                    //Onde buscar as imagens
+                                    String caminho_da_imagem = "Série/"+nome_serie+"/Imagem";
+                                    DatabaseReference pegaImagem = database.getReference(caminho_da_imagem);
+                                    //lay_out.removeAllViews();
+                                    //Busca a imagem
+                                    pegaImagem.addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                            //Onde será mostrado
+                                            ImageView foto_filme = new ImageView(getApplicationContext());
+                                            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(700, 300);
+                                            foto_filme.setLayoutParams(layoutParams);
+                                            //Adiciona o campo de imagem
+                                            lay_out.addView(foto_filme);
+                                            //Adiciona o botão
+                                            lay_out.addView(b_s);
+
+                                            //Busca o link da imagem
+                                            String cod_image = dataSnapshot.getValue().toString();
+                                            //Baixa a imagem e aplica
+                                            Picasso.with(getApplicationContext()).load(cod_image).into(foto_filme);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError databaseError) {
+                                            //Se for cancelado a busca por imagens....
+                                            Toast.makeText(getApplicationContext(),"Imagens não serão baixadas.",Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                    b_s.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            temporadas.clear();
+                                            database.getReference("Série/"+nome_serie+"/Temporadas").addValueEventListener(new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                    for(DataSnapshot sn: dataSnapshot.getChildren()) {
+                                                        String val_t = sn.getKey();
+                                                        temporadas.add(val_t);
+                                                    }
+                                                    final String[] texto = new String[temporadas.size()];
+                                                    temporadas.toArray(texto);
+
+                                                    final AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+                                                    alert.setTitle("Temporadas");
+                                                    alert.setItems(texto, new DialogInterface.OnClickListener() {
+                                                        @Override
+                                                        public void onClick(DialogInterface dialog, int which) {
+                                                            //toastRapido(texto[which],false);
+                                                            episodios.clear();
+                                                            link_episodios.clear();
+                                                            database.getReference("Série/"+nome_serie+"/Temporadas/"+texto[which]).addValueEventListener(new ValueEventListener() {
+                                                                @Override
+                                                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                                    for(DataSnapshot g : dataSnapshot.getChildren()){
+                                                                        String nome_ep = g.getKey();
+                                                                        episodios.add(nome_ep);
+                                                                        link_episodios.add(g.getValue().toString());
+                                                                    }
+                                                                    final String[] texto2 = new String[episodios.size()];
+                                                                    episodios.toArray(texto2);
+
+                                                                    final AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+                                                                    alert.setTitle("Episódios");
+                                                                    alert.setItems(texto2, new DialogInterface.OnClickListener() {
+                                                                        @Override
+                                                                        public void onClick(DialogInterface dialog, int which) {
+                                                                            Intent i = new Intent(MainActivity.this, WebPlayer.class);
+                                                                            i.putExtra("URL_FILME",link_episodios.get(which).toString());
+                                                                            startActivity(i);
+                                                                        }
+                                                                    });
+                                                                    alert.show();
+
+                                                                }
+
+                                                                @Override
+                                                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                    alert.show();
+                                                }
+
+                                                @Override
+                                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                                }
+                                            });
+
+
+                                        }
+                                    });
+                             //   }
                             }
 
                             @Override
@@ -289,6 +419,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
                     for(DataSnapshot dt: dataSnapshot.getChildren()){
                         final String nome_serie = dt.getKey();
+                        series_listadas.add(nome_serie);
                         final Button b_s = new Button(getApplicationContext());
                         b_s.setText(nome_serie);
                         b_s.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -342,7 +473,39 @@ public class MainActivity extends AppCompatActivity {
                                     alert.setItems(texto, new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
-                                            toastRapido(texto[which],false);
+                                            //toastRapido(texto[which],false);
+                                            episodios.clear();
+                                            link_episodios.clear();
+                                            database.getReference("Série/"+nome_serie+"/Temporadas/"+texto[which]).addValueEventListener(new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                    for(DataSnapshot g : dataSnapshot.getChildren()){
+                                                        String nome_ep = g.getKey();
+                                                        episodios.add(nome_ep);
+                                                        link_episodios.add(g.getValue().toString());
+                                                    }
+                                                    final String[] texto2 = new String[episodios.size()];
+                                                    episodios.toArray(texto2);
+
+                                                    final AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+                                                    alert.setTitle("Episódios");
+                                                    alert.setItems(texto2, new DialogInterface.OnClickListener() {
+                                                        @Override
+                                                        public void onClick(DialogInterface dialog, int which) {
+                                                            Intent i = new Intent(MainActivity.this, WebPlayer.class);
+                                                            i.putExtra("URL_FILME",link_episodios.get(which).toString());
+                                                            startActivity(i);
+                                                        }
+                                                    });
+                                                    alert.show();
+
+                                                }
+
+                                                @Override
+                                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                                }
+                                            });
                                         }
                                     });
                                     alert.show();
@@ -381,13 +544,4 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(),texto,Toast.LENGTH_LONG).show();
             }
         }
-        public void addLabel(String text){
-            TextView t = new TextView(getApplicationContext());
-            t.setTextColor(Color.WHITE);
-            t.setText(text);
-            t.setTextSize(42);
-            t.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-            lay_out.addView(t);
-        }
     }
-

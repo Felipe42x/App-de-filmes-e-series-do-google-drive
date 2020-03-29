@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     List<String> filmes_encontrados = new ArrayList<String>();
     int resultados = 0;
     Boolean pesquisou = false;
+    int contador = 0;
     final FirebaseDatabase database = FirebaseDatabase.getInstance(); //Instancia do Firebase
 
     @Override
@@ -88,7 +89,8 @@ public class MainActivity extends AppCompatActivity {
                     MostraAviso("Nenhuma correspondência foi encontrada :/");
                 }
                 else{
-                    if(txt_pesquisa.getText().toString().length() != 0) {
+                    if(txt_pesquisa.getText().toString().length() != 0 && contador == 0) {
+                        contador = 1;
                         MostraAviso("Para listar todo o conteúdo novamente, faça uma pesquisa vazia.");
                     }
                     txt_pesquisa.setText("");

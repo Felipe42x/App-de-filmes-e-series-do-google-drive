@@ -12,6 +12,8 @@ import android.os.Bundle;
 import android.sax.TextElementListener;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -32,6 +34,10 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     LinearLayout lay_out; //Onde será adicionado os botões, etc
+    EditText txt_pesquisa;
+    ImageButton btn_busca;
+    List<String> filmes_listados = new ArrayList<String>();
+    List<String> filmes_encontrados = new ArrayList<String>();
 
     final FirebaseDatabase database = FirebaseDatabase.getInstance(); //Instancia do Firebase
 
@@ -39,6 +45,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        btn_busca = (ImageButton)findViewById(R.id.btnPesquisa);
+        txt_pesquisa = (EditText) findViewById(R.id.txtPesquisa);
 
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
         alert.setTitle("Aviso!");
@@ -54,13 +62,34 @@ public class MainActivity extends AppCompatActivity {
         });
         alert.show();
 
+        btn_busca.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int resultados = 0;
+                filmes_encontrados.clear();
+                String busca = txt_pesquisa.getText().toString();
+                int qtd_filmes = filmes_listados.size();
+                for(int a = 0; a < qtd_filmes; a++){
+                    if(filmes_listados.get(a).toUpperCase().startsWith(busca.toUpperCase())){
+                        filmes_encontrados.add(filmes_listados.get(a));
+                    }
+                }
+                resultados = filmes_encontrados.size();
+                if(resultados == 0){
+                    MostraAviso("Nenhuma correspondência foi encontrada :/");
+                }
+                else{
+                    toastRapido("Listando...",false);
+                }
+            }
+        });
     }
 
         public  void buscarTUDO(){
             //Buscando pelos filmes
             final DatabaseReference myRef = database.getReference("Filme");
             //Avisa que está buscando no banco de dados
-            Toast.makeText(getApplicationContext(),"Carregando...",Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(),"Buscando...",Toast.LENGTH_LONG).show();
 
             //Cria o layout onde será adicionado os itens
             final LinearLayout lay_out = (LinearLayout) findViewById(R.id.layoutMestre);
@@ -69,12 +98,11 @@ public class MainActivity extends AppCompatActivity {
             myRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    //Remove todos os itens para evitar bug
-                    lay_out.removeAllViews();
                     //Percorre o banco buscando filmes
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         //Pega o nome do filme
                         String nome_filme = snapshot.getKey().toString();
+                        filmes_listados.add(nome_filme);
 
                         //Botões
                         final Button btn = new Button(getApplicationContext());
@@ -154,6 +182,14 @@ public class MainActivity extends AppCompatActivity {
             alert.setMessage(data);
             alert.setPositiveButton("OK",null);
             alert.show();
+        }
+        public void  toastRapido(String texto, Boolean curto){
+            if(curto){
+                Toast.makeText(getApplicationContext(),texto,Toast.LENGTH_SHORT).show();
+            }
+            else{
+                Toast.makeText(getApplicationContext(),texto,Toast.LENGTH_LONG).show();
+            }
         }
     }
 

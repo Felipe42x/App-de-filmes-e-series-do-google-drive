@@ -38,15 +38,23 @@ public class MainActivity extends AppCompatActivity {
     ImageButton btn_busca;
     List<String> filmes_listados = new ArrayList<String>();
     List<String> filmes_encontrados = new ArrayList<String>();
-
+    int resultados = 0;
+    Boolean pesquisou = false;
     final FirebaseDatabase database = FirebaseDatabase.getInstance(); //Instancia do Firebase
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        lay_out = findViewById(R.id.layoutMestre);
+
+
+
         btn_busca = (ImageButton)findViewById(R.id.btnPesquisa);
         txt_pesquisa = (EditText) findViewById(R.id.txtPesquisa);
+        //Cria o layout onde será adicionado os itens
+
+
 
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
         alert.setTitle("Aviso!");
@@ -65,12 +73,13 @@ public class MainActivity extends AppCompatActivity {
         btn_busca.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int resultados = 0;
+                resultados = 0;
                 filmes_encontrados.clear();
                 String busca = txt_pesquisa.getText().toString();
                 int qtd_filmes = filmes_listados.size();
+
                 for(int a = 0; a < qtd_filmes; a++){
-                    if(filmes_listados.get(a).toUpperCase().startsWith(busca.toUpperCase())){
+                    if(filmes_listados.get(a).toUpperCase().contains(busca.toUpperCase())){
                         filmes_encontrados.add(filmes_listados.get(a));
                     }
                 }
@@ -79,7 +88,98 @@ public class MainActivity extends AppCompatActivity {
                     MostraAviso("Nenhuma correspondência foi encontrada :/");
                 }
                 else{
+                    if(txt_pesquisa.getText().toString().length() != 0) {
+                        MostraAviso("Para listar todo o conteúdo novamente, faça uma pesquisa vazia.");
+                    }
+                    txt_pesquisa.setText("");
+                    lay_out.removeAllViews();
                     toastRapido("Listando...",false);
+                    pesquisou = true;
+                    //MostraAviso(resultados+"");
+                    for(int x = 0; x< resultados; x++){
+                        database.getReference("Filme/"+filmes_encontrados.get(x).toString()).addValueEventListener(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                //Percorre o banco buscando filmes
+                                //for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                                    //Pega o nome do filme
+                                    String nome_filme = dataSnapshot.getKey().toString();
+                                    //filmes_listados.add(nome_filme);
+
+                                    //Botões
+                                    final Button btn = new Button(getApplicationContext());
+                                    //Coloca o nome do filme no botão
+                                    btn.setText(nome_filme);
+                                    //Configura o botão para caber na tela
+                                    btn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+                                    //Onde buscar as imagens
+                                    String caminho_da_imagem = "Filme/"+nome_filme+"/Imagem";
+                                    //Referência para buscar a imagem
+                                    DatabaseReference pegaImagem = database.getReference(caminho_da_imagem);
+
+                                    //Busca a imagem
+                                    pegaImagem.addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                            //Onde será mostrado
+                                            ImageView foto_filme = new ImageView(getApplicationContext());
+                                            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(700, 300);
+                                            foto_filme.setLayoutParams(layoutParams);
+                                            //Adiciona o campo de imagem
+                                            lay_out.addView(foto_filme);
+                                            //Adiciona o botão
+                                            lay_out.addView(btn);
+
+                                            //Busca o link da imagem
+                                            String cod_image = dataSnapshot.getValue().toString();
+                                            //Baixa a imagem e aplica
+                                            Picasso.with(getApplicationContext()).load(cod_image).into(foto_filme);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError databaseError) {
+                                            //Se for cancelado a busca por imagens....
+                                            Toast.makeText(getApplicationContext(),"Imagens não serão baixadas.",Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+
+                                    //Clique no botão
+                                    btn.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            //Caminho onde estão os links dos arquivos de video "filmes"
+                                            String caminho = "Filme/"+btn.getText().toString()+"/Link";
+                                            DatabaseReference nova = database.getReference(caminho);
+                                            //LINK
+                                            nova.addListenerForSingleValueEvent(new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                    //Abre o link em outra página
+                                                    Intent i = new Intent(MainActivity.this, WebPlayer.class);
+                                                    i.putExtra("URL_FILME", dataSnapshot.getValue().toString());
+                                                    startActivity(i);
+                                                }
+
+                                                @Override
+                                                public void onCancelled(@NonNull DatabaseError databaseError) {
+                                                    //Não está mais buscando o link
+                                                    Toast.makeText(getApplicationContext(),"Cancelado.",Toast.LENGTH_SHORT).show();
+                                                }
+                                            });
+                                        }
+                                    });
+
+                                //}
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                            }
+                        });
+                    }
+                    resultados = 0;
                 }
             }
         });
@@ -90,9 +190,6 @@ public class MainActivity extends AppCompatActivity {
             final DatabaseReference myRef = database.getReference("Filme");
             //Avisa que está buscando no banco de dados
             Toast.makeText(getApplicationContext(),"Buscando...",Toast.LENGTH_LONG).show();
-
-            //Cria o layout onde será adicionado os itens
-            final LinearLayout lay_out = (LinearLayout) findViewById(R.id.layoutMestre);
 
             //Quando os filmes tem uma alteração
             myRef.addListenerForSingleValueEvent(new ValueEventListener() {

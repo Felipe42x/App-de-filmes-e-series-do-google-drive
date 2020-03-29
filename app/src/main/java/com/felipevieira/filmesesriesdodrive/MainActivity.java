@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.media.Image;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.sax.TextElementListener;
 import android.view.View;
 import android.widget.Button;
@@ -16,6 +17,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,6 +40,9 @@ public class MainActivity extends AppCompatActivity {
     ImageButton btn_busca;
     List<String> filmes_listados = new ArrayList<String>();
     List<String> filmes_encontrados = new ArrayList<String>();
+
+    List<String> temporadas = new ArrayList<String>();
+
     int resultados = 0;
     Boolean pesquisou = false;
     int contador = 0;
@@ -47,15 +52,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         lay_out = findViewById(R.id.layoutMestre);
-
-
+        //pay_out = findViewById(R.id.layoutSerie);
 
         btn_busca = (ImageButton)findViewById(R.id.btnPesquisa);
         txt_pesquisa = (EditText) findViewById(R.id.txtPesquisa);
         //Cria o layout onde será adicionado os itens
-
-
 
         AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
         alert.setTitle("Aviso!");
@@ -74,103 +77,108 @@ public class MainActivity extends AppCompatActivity {
         btn_busca.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (contador == 1 && txt_pesquisa.getText().toString().equals("") ) {
+                    lay_out.removeAllViews();
+                    filmes_listados.clear();
+                    buscarTUDO();
+                }
+                else{
                 resultados = 0;
                 filmes_encontrados.clear();
                 String busca = txt_pesquisa.getText().toString();
                 int qtd_filmes = filmes_listados.size();
 
-                for(int a = 0; a < qtd_filmes; a++){
-                    if(filmes_listados.get(a).toUpperCase().contains(busca.toUpperCase())){
+                for (int a = 0; a < qtd_filmes; a++) {
+                    if (filmes_listados.get(a).toUpperCase().contains(busca.toUpperCase())) {
                         filmes_encontrados.add(filmes_listados.get(a));
                     }
                 }
                 resultados = filmes_encontrados.size();
-                if(resultados == 0){
+                if (resultados == 0) {
                     MostraAviso("Nenhuma correspondência foi encontrada :/");
-                }
-                else{
-                    if(txt_pesquisa.getText().toString().length() != 0 && contador == 0) {
+                } else {
+                    if (txt_pesquisa.getText().toString().length() != 0 && contador == 0) {
                         contador = 1;
                         MostraAviso("Para listar todo o conteúdo novamente, faça uma pesquisa vazia.");
                     }
                     txt_pesquisa.setText("");
                     lay_out.removeAllViews();
-                    toastRapido("Listando...",false);
+                    toastRapido("Listando...", false);
                     pesquisou = true;
                     //MostraAviso(resultados+"");
-                    for(int x = 0; x< resultados; x++){
-                        database.getReference("Filme/"+filmes_encontrados.get(x).toString()).addValueEventListener(new ValueEventListener() {
+                    for (int x = 0; x < resultados; x++) {
+                        database.getReference("Filme/" + filmes_encontrados.get(x).toString()).addValueEventListener(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                 //Percorre o banco buscando filmes
                                 //for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                                    //Pega o nome do filme
-                                    String nome_filme = dataSnapshot.getKey().toString();
-                                    //filmes_listados.add(nome_filme);
+                                //Pega o nome do filme
+                                String nome_filme = dataSnapshot.getKey().toString();
+                                //filmes_listados.add(nome_filme);
 
-                                    //Botões
-                                    final Button btn = new Button(getApplicationContext());
-                                    //Coloca o nome do filme no botão
-                                    btn.setText(nome_filme);
-                                    //Configura o botão para caber na tela
-                                    btn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                                //Botões
+                                final Button btn = new Button(getApplicationContext());
+                                //Coloca o nome do filme no botão
+                                btn.setText(nome_filme);
+                                //Configura o botão para caber na tela
+                                btn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-                                    //Onde buscar as imagens
-                                    String caminho_da_imagem = "Filme/"+nome_filme+"/Imagem";
-                                    //Referência para buscar a imagem
-                                    DatabaseReference pegaImagem = database.getReference(caminho_da_imagem);
+                                //Onde buscar as imagens
+                                String caminho_da_imagem = "Filme/" + nome_filme + "/Imagem";
+                                //Referência para buscar a imagem
+                                DatabaseReference pegaImagem = database.getReference(caminho_da_imagem);
 
-                                    //Busca a imagem
-                                    pegaImagem.addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                            //Onde será mostrado
-                                            ImageView foto_filme = new ImageView(getApplicationContext());
-                                            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(700, 300);
-                                            foto_filme.setLayoutParams(layoutParams);
-                                            //Adiciona o campo de imagem
-                                            lay_out.addView(foto_filme);
-                                            //Adiciona o botão
-                                            lay_out.addView(btn);
+                                //Busca a imagem
+                                pegaImagem.addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                        //Onde será mostrado
+                                        ImageView foto_filme = new ImageView(getApplicationContext());
+                                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(700, 300);
+                                        foto_filme.setLayoutParams(layoutParams);
+                                        //Adiciona o campo de imagem
+                                        lay_out.addView(foto_filme);
+                                        //Adiciona o botão
+                                        lay_out.addView(btn);
 
-                                            //Busca o link da imagem
-                                            String cod_image = dataSnapshot.getValue().toString();
-                                            //Baixa a imagem e aplica
-                                            Picasso.with(getApplicationContext()).load(cod_image).into(foto_filme);
-                                        }
+                                        //Busca o link da imagem
+                                        String cod_image = dataSnapshot.getValue().toString();
+                                        //Baixa a imagem e aplica
+                                        Picasso.with(getApplicationContext()).load(cod_image).into(foto_filme);
+                                    }
 
-                                        @Override
-                                        public void onCancelled(@NonNull DatabaseError databaseError) {
-                                            //Se for cancelado a busca por imagens....
-                                            Toast.makeText(getApplicationContext(),"Imagens não serão baixadas.",Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                                        //Se for cancelado a busca por imagens....
+                                        Toast.makeText(getApplicationContext(), "Imagens não serão baixadas.", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
 
-                                    //Clique no botão
-                                    btn.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            //Caminho onde estão os links dos arquivos de video "filmes"
-                                            String caminho = "Filme/"+btn.getText().toString()+"/Link";
-                                            DatabaseReference nova = database.getReference(caminho);
-                                            //LINK
-                                            nova.addListenerForSingleValueEvent(new ValueEventListener() {
-                                                @Override
-                                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                    //Abre o link em outra página
-                                                    Intent i = new Intent(MainActivity.this, WebPlayer.class);
-                                                    i.putExtra("URL_FILME", dataSnapshot.getValue().toString());
-                                                    startActivity(i);
-                                                }
+                                //Clique no botão
+                                btn.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        //Caminho onde estão os links dos arquivos de video "filmes"
+                                        String caminho = "Filme/" + btn.getText().toString() + "/Link";
+                                        DatabaseReference nova = database.getReference(caminho);
+                                        //LINK
+                                        nova.addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                //Abre o link em outra página
+                                                Intent i = new Intent(MainActivity.this, WebPlayer.class);
+                                                i.putExtra("URL_FILME", dataSnapshot.getValue().toString());
+                                                startActivity(i);
+                                            }
 
-                                                @Override
-                                                public void onCancelled(@NonNull DatabaseError databaseError) {
-                                                    //Não está mais buscando o link
-                                                    Toast.makeText(getApplicationContext(),"Cancelado.",Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
-                                        }
-                                    });
+                                            @Override
+                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+                                                //Não está mais buscando o link
+                                                Toast.makeText(getApplicationContext(), "Cancelado.", Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+                                    }
+                                });
 
                                 //}
                             }
@@ -184,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
                     resultados = 0;
                 }
             }
+        }
         });
     }
 
@@ -192,7 +201,6 @@ public class MainActivity extends AppCompatActivity {
             final DatabaseReference myRef = database.getReference("Filme");
             //Avisa que está buscando no banco de dados
             Toast.makeText(getApplicationContext(),"Buscando...",Toast.LENGTH_LONG).show();
-
             //Quando os filmes tem uma alteração
             myRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
@@ -274,6 +282,89 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(),"Cancelado.",Toast.LENGTH_SHORT).show();
                 }
             });
+            //==============================================================================================================
+            //Buscando as séries
+            database.getReference("/Série").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
+                    for(DataSnapshot dt: dataSnapshot.getChildren()){
+                        final String nome_serie = dt.getKey();
+                        final Button b_s = new Button(getApplicationContext());
+                        b_s.setText(nome_serie);
+                        b_s.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+                        //Onde buscar as imagens
+                        String caminho_da_imagem = "Série/"+nome_serie+"/Imagem";
+                        //Referência para buscar a imagem
+                        DatabaseReference pegaImagem = database.getReference(caminho_da_imagem);
+                        //lay_out.removeAllViews();
+                        //Busca a imagem
+                        pegaImagem.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                //Onde será mostrado
+                                ImageView foto_filme = new ImageView(getApplicationContext());
+                                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(700, 300);
+                                foto_filme.setLayoutParams(layoutParams);
+                                //Adiciona o campo de imagem
+                                lay_out.addView(foto_filme);
+                                //Adiciona o botão
+                                lay_out.addView(b_s);
+
+                                //Busca o link da imagem
+                                String cod_image = dataSnapshot.getValue().toString();
+                                //Baixa a imagem e aplica
+                                Picasso.with(getApplicationContext()).load(cod_image).into(foto_filme);
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+                                //Se for cancelado a busca por imagens....
+                                Toast.makeText(getApplicationContext(),"Imagens não serão baixadas.",Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    b_s.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            temporadas.clear();
+                            database.getReference("Série/"+nome_serie+"/Temporadas").addValueEventListener(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                    for(DataSnapshot sn: dataSnapshot.getChildren()) {
+                                        String val_t = sn.getKey();
+                                        temporadas.add(val_t);
+                                    }
+                                    final String[] texto = new String[temporadas.size()];
+                                    temporadas.toArray(texto);
+
+                                    final AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+                                    alert.setTitle("Temporadas");
+                                    alert.setItems(texto, new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            toastRapido(texto[which],false);
+                                        }
+                                    });
+                                    alert.show();
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                }
+                            });
+
+
+                        }
+                    });
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
         }
         public void MostraAviso(String data){
             AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
@@ -289,6 +380,14 @@ public class MainActivity extends AppCompatActivity {
             else{
                 Toast.makeText(getApplicationContext(),texto,Toast.LENGTH_LONG).show();
             }
+        }
+        public void addLabel(String text){
+            TextView t = new TextView(getApplicationContext());
+            t.setTextColor(Color.WHITE);
+            t.setText(text);
+            t.setTextSize(42);
+            t.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            lay_out.addView(t);
         }
     }
 

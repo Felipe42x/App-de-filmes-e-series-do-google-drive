@@ -34,15 +34,19 @@
     </LinearLayout>
 
     <ScrollView
-        android:layout_width="wrap_content"
-        android:background="@drawable/lamo"
-        android:layout_height="wrap_content">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/lamo">
 
         <LinearLayout
             android:id="@+id/layoutMestre"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+        </LinearLayout>
+
     </ScrollView>
+
 
 </LinearLayout>

@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.media.Image;
@@ -38,9 +39,26 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        MostraAviso("Se uma tela vermelha aparecer ao reproduzir o filme: o limite de exibições do filme no google drive foi excedido.");
-        //Buscando pelos filmes
-        final DatabaseReference myRef = database.getReference("Filme");
+
+        AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+        alert.setTitle("Aviso!");
+        alert.setMessage("Se uma tela vermelha aparecer dizendo que não existe vídeo disponível:\n" +
+                "1 - O filme pode ter sido denunciado e ter saído do ar.\n" +
+                "2 - O limite de exibições do Google Drive foi excedido, tente novamente mais tarde.");
+        alert.setPositiveButton("OK",null);
+        alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                buscarTUDO();
+            }
+        });
+        alert.show();
+
+    }
+
+        public  void buscarTUDO(){
+            //Buscando pelos filmes
+            final DatabaseReference myRef = database.getReference("Filme");
             //Avisa que está buscando no banco de dados
             Toast.makeText(getApplicationContext(),"Carregando...",Toast.LENGTH_LONG).show();
 
@@ -130,7 +148,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
-
         public void MostraAviso(String data){
             AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
             alert.setTitle("Aviso!");

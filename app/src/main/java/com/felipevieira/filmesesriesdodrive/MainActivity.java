@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        MostraAviso("Se uma tela vermelha aparecer ao reproduzir o filme: o limite de exibições do filme no google drive foi excedido.");
         //Buscando pelos filmes
         final DatabaseReference myRef = database.getReference("Filme");
             //Avisa que está buscando no banco de dados
@@ -129,6 +129,14 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(),"Cancelado.",Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+
+        public void MostraAviso(String data){
+            AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+            alert.setTitle("Aviso!");
+            alert.setMessage(data);
+            alert.setPositiveButton("OK",null);
+            alert.show();
         }
     }
 

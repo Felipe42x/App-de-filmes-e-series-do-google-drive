@@ -3,8 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:orientation="vertical"
     android:layout_height="match_parent"
+    android:background="#000000"
+    android:orientation="vertical"
     tools:context=".MainActivity">
 
     <LinearLayout
@@ -19,18 +20,22 @@
             android:layout_margin="5dp"
             android:layout_weight="1"
             android:ems="10"
-            android:hint="Pesquisa..."
-            android:inputType="textPersonName" />
+            android:hint="Faça uma pesquisa..."
+            android:inputType="textPersonName"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#C1BBBB" />
 
         <ImageButton
             android:id="@+id/btnPesquisa"
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:layout_weight="1"
+            android:alpha="1"
             android:backgroundTint="#00FFFFFF"
             android:scaleType="centerInside"
             android:tint="#00000000"
-            app:srcCompat="@drawable/search" />
+            app:srcCompat="@drawable/procurar" />
+
     </LinearLayout>
 
     <ScrollView
